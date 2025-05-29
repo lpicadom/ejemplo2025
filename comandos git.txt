@@ -1,0 +1,11 @@
+git config --global user.name "Mauricio Camacho"
+git config --list
+git config --global user.email "mcamacho2@ucenfotec.ac.cr
+
+git status
+git add * 
+git commit -m "se agregan atributos a ejemplos"
+git push 
+
+git fetch
+git pull
