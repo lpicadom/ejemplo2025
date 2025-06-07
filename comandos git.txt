@@ -17,3 +17,5 @@ git pull
 git branch --all PARA VER TODOS LOS BRANCHES
 
 git checkout NOMBRE DEL BRANCH .... Para cambiar de branch
+
+git push -u origin main
