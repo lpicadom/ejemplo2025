@@ -7,5 +7,13 @@ git add *
 git commit -m "se agregan atributos a ejemplos"
 git push 
 
-git fetch
+------Actualizar local ---
+git fetch QUE PASO EN EL REMOTO? 
 git pull
+
+
+---- branch --- 
+
+git branch --all PARA VER TODOS LOS BRANCHES
+
+git checkout NOMBRE DEL BRANCH .... Para cambiar de branch
