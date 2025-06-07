@@ -1,3 +1,5 @@
+package BL;
+
 import java.time.LocalDateTime;
 
 public class EntradaHistorial {

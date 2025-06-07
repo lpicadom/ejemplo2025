@@ -1,3 +1,5 @@
+package BL;
+
 public class Cancion {
     private int id;
     private String titulo;

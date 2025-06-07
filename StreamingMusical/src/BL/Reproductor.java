@@ -1,3 +1,5 @@
+package BL;
+
 public class Reproductor {
     private String estado;
     private Cancion cancionActual;
