@@ -43,4 +43,13 @@ public class Artista {
         return albumes;
     }
 
+    public Album buscarAlbumPorId(int idAlbum) {
+        for (Album album : albumes) {
+            if (album.getId() == idAlbum) {
+                return album;
+            }
+        }
+        return null;
+    }
+
 }

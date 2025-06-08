@@ -28,5 +28,14 @@ public class BibliotecaMusical {
         return albumes;
     }
 
+    public Artista buscarArtistaPorId(int id) {
+        for (Artista a : artistas) {
+            if (a.getId() == id) {
+                return a;
+            }
+        }
+        return null;
+    }
+
 
 }
