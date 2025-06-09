@@ -17,14 +17,14 @@ public class ControladorApp {
     public void crearUsuario(String nombre, String correo, String contrasena) {
         this.usuario = new Usuario(1, nombre, correo, contrasena, "Gratis");
         ListaDeReproduccion lista = new ListaDeReproduccion(1, "Mi Lista", usuario);
-        usuario.getListasDeReproduccion().add(lista);
+        usuario.getListasDeReproduccion().add(lista); // poner el id de los usuarios a que avance +1 conforme se generen mas
     }
 
 
-    public void agregarCancionManual(int idArtista, String nombreArtista, String descripcionArtista,
-                                     int idAlbum, String tituloAlbum, int anioAlbum,
-                                     int idCancion, String tituloCancion, int duracion,
-                                     String genero, String ruta) {
+    public Cancion agregarCancionManual(int idArtista, String nombreArtista, String descripcionArtista,
+                                        int idAlbum, String tituloAlbum, int anioAlbum,
+                                        int idCancion, String tituloCancion, int duracion,
+                                        String genero, String ruta) {
 
         // Buscar si ya existe el artista
         Artista artista = biblioteca.buscarArtistaPorId(idArtista);
@@ -45,6 +45,8 @@ public class ControladorApp {
         Cancion cancion = new Cancion(idCancion, tituloCancion, artista, album, duracion, genero, ruta);
         album.getCanciones().add(cancion);
         biblioteca.getCanciones().add(cancion);
+
+        return cancion; // <-- Devuelve la canción creada
     }
 
     public void reproducirCancion(int index) {
@@ -81,34 +83,8 @@ public class ControladorApp {
         }
     }
 
-    public void inicializarDatos() {
-        // Crear artista
-        Artista artista = new Artista(1, "Queen", "Banda de rock británica.");
-        Album album = new Album(1, "A Night at the Opera", artista, 1975);
-        artista.getAlbumes().add(album);
 
-        // Crear canción
-        Cancion cancion = new Cancion(1, "Bohemian Rhapsody", artista, album, 354, "Rock", "ruta/bohemian.mp3");
-        album.getCanciones().add(cancion);
 
-        // Crear lista de reproducción
-        ListaDeReproduccion lista = new ListaDeReproduccion(1, "Favoritas", usuario);
-        lista.getCanciones().add(cancion);
-        usuario.getListasDeReproduccion().add(lista);
-
-        // Historial
-        EntradaHistorial entrada = new EntradaHistorial(cancion, LocalDateTime.now());
-        usuario.getHistorialReproduccion().getEntradas().add(entrada);
-
-        // Reproductor
-        reproductor.setCancionActual(cancion);
-        reproductor.setEstado("Reproduciendo");
-
-        // Biblioteca
-        biblioteca.getArtistas().add(artista);
-        biblioteca.getAlbumes().add(album);
-        biblioteca.getCanciones().add(cancion);
-    }
 
     public Usuario getUsuario() {
         return usuario;

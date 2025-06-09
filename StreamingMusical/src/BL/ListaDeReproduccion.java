@@ -16,6 +16,11 @@ public class ListaDeReproduccion {
         this.canciones = new ArrayList<>();
     }
 
+    public void agregarCancion(Cancion cancion) {
+        this.canciones.add(cancion);
+    }
+
+
     public int getId() {
         return id;
     }
