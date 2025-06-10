@@ -1,14 +1,13 @@
 package BL;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
-public class ControladorApp {
+public class BL {
     private Usuario usuario;
     private Reproductor reproductor;
     private BibliotecaMusical biblioteca;
 
-    public ControladorApp() {
+    public BL() {
         this.reproductor = new Reproductor();
         this.biblioteca = new BibliotecaMusical();
     }
