@@ -2,6 +2,7 @@ package UI;
 
 import BL.*;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -56,6 +57,7 @@ public class UI {
         System.out.println("Usuario creado correctamente.");
     }
 
+
     public static void agregarCanciones() {
         boolean agregarOtra = true;
         Usuario usuario = app.getUsuario();
@@ -87,8 +89,21 @@ public class UI {
             int duracion = scanner.nextInt(); scanner.nextLine();
             System.out.print("Género: ");
             String genero = scanner.nextLine();
-            System.out.print("Ruta archivo: ");
-            String ruta = scanner.nextLine();
+
+            // Validar la ruta del archivo con ciclo hasta que sea válida
+            String ruta = "";
+            boolean rutaValida = false;
+            while (!rutaValida) {
+                System.out.print("Ruta archivo: ");
+                ruta = scanner.nextLine();
+
+                File archivo = new File(ruta);
+                if (!archivo.exists()) {
+                    System.out.println("⚠ El archivo no existe. Intente nuevamente.");
+                } else {
+                    rutaValida = true;
+                }
+            }
 
             // Agrega a la biblioteca
             Cancion nueva = app.agregarCancionManual(idArtista, nombreArtista, descArtista, idAlbum, tituloAlbum, anio,

@@ -4,6 +4,7 @@ public class Reproductor {
     private String estado;
     private Cancion cancionActual;
     private int volumen;
+    private MP3Player mp3Player = new MP3Player();
 
     public String getEstado() {
         return estado;
@@ -17,8 +18,12 @@ public class Reproductor {
         return cancionActual;
     }
 
+
     public void setCancionActual(Cancion cancionActual) {
         this.cancionActual = cancionActual;
+        if (cancionActual != null) {
+            mp3Player.reproducir(cancionActual.getArchivoRuta());
+        }
     }
 
     public int getVolumen() {
