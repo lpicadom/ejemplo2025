@@ -1,5 +1,6 @@
 package controller;
 
+import dao.AdministradorDAO;
 import dao.ClienteDAO;
 import dao.CuentaDAO;
 import model.*;
@@ -11,14 +12,31 @@ import java.util.List;
 public class ControladorPrincipal {
     private ClienteDAO clienteDAO;
     private CuentaDAO cuentaDAO;
+    private AdministradorDAO administradorDAO;
 
     public ControladorPrincipal() {
         clienteDAO = new ClienteDAO();
         cuentaDAO = new CuentaDAO();
+        administradorDAO = new AdministradorDAO();
+    }
+
+    // MÉTODOS ADMINISTRADOR
+    public void registrarAdministrador(Administrador administrador) throws Exception {
+        if (administradorDAO.buscar() != null) {
+            throw new Exception("Ya existe un administrador registrado.");
+        }
+        administradorDAO.guardar(administrador);
+    }
+
+    public Administrador obtenerAdministrador() throws SQLException {
+        return administradorDAO.buscar();
     }
 
     // MÉTODOS CLIENTE
     public void registrarCliente(Cliente cliente) throws Exception {
+        if (obtenerAdministrador() == null) {
+            throw new Exception("No es posible registrar clientes sin un administrador.");
+        }
         if (clienteDAO.buscarPorCedula(cliente.getCedula()) != null) {
             throw new Exception("El cliente con esa cédula ya está registrado.");
         }
@@ -49,6 +67,9 @@ public class ControladorPrincipal {
 
     // MÉTODOS CUENTA
     public void registrarCuenta(CuentaBancaria cuenta) throws Exception {
+        if (clienteDAO.buscarPorCedula(cuenta.getCedulaCliente()) == null) {
+            throw new Exception("El cliente no está registrado.");
+        }
         cuentaDAO.guardar(cuenta);
     }
 
@@ -65,7 +86,6 @@ public class ControladorPrincipal {
         cuenta.depositar(monto);
         cuentaDAO.actualizarSaldo(cuenta.getNumeroCuenta(), cuenta.getSaldo());
 
-        // Se agregó la lógica para guardar la transacción en la base de datos
         Transaccion transaccion = new Transaccion(monto, new Date(), numeroCuenta);
         cuentaDAO.guardarTransaccion(transaccion);
     }
@@ -79,7 +99,6 @@ public class ControladorPrincipal {
         cuenta.retirar(monto);
         cuentaDAO.actualizarSaldo(cuenta.getNumeroCuenta(), cuenta.getSaldo());
 
-        // Se agregó la lógica para guardar la transacción en la base de datos
         Transaccion transaccion = new Transaccion(-monto, new Date(), numeroCuenta);
         cuentaDAO.guardarTransaccion(transaccion);
     }
@@ -97,7 +116,6 @@ public class ControladorPrincipal {
         ((CuentaCredito) cuenta).abonar(monto);
         cuentaDAO.actualizarSaldo(cuenta.getNumeroCuenta(), cuenta.getSaldo());
 
-        // Se agregó la lógica para guardar la transacción en la base de datos
         Transaccion transaccion = new Transaccion(monto, new Date(), numeroCuenta);
         cuentaDAO.guardarTransaccion(transaccion);
     }
@@ -114,8 +132,11 @@ public class ControladorPrincipal {
         cuentaDAO.actualizarEstado(numeroCuenta, activa);
     }
 
-    // Se agregó el método para obtener el historial de transacciones
     public List<Transaccion> obtenerHistorialTransacciones(String numeroCuenta) throws SQLException {
         return cuentaDAO.listarTransacciones(numeroCuenta);
+    }
+
+    public List<CuentaBancaria> listarTodasLasCuentas() throws SQLException {
+        return cuentaDAO.listarTodas();
     }
 }

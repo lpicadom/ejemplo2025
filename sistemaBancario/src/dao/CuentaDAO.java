@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CuentaDAO {
-
     public void guardar(CuentaBancaria cuenta) throws SQLException {
         String sql = "INSERT INTO cuenta_bancaria (numero_cuenta, tipo, saldo, activa, fecha_creacion, cedula_cliente, limite_credito) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -41,7 +40,6 @@ public class CuentaDAO {
         CuentaBancaria cuenta = null;
 
         try {
-            // Normalizar el tipo de cuenta para comparar sin importar mayúsculas/minúsculas o tildes
             String tipoNormalizado = tipo.trim().toLowerCase();
 
             switch (tipoNormalizado) {
@@ -49,11 +47,11 @@ public class CuentaDAO {
                     cuenta = new CuentaAhorro(cedulaCliente, saldo, 0.03);
                     break;
                 case "debito":
-                case "débito": // Añadimos el caso con tilde
+                case "débito":
                     cuenta = new CuentaDebito(cedulaCliente, saldo, 0.01);
                     break;
                 case "credito":
-                case "crédito": // Añadimos el caso con tilde
+                case "crédito":
                     double limite = rs.getDouble("limite_credito");
                     cuenta = new CuentaCredito(cedulaCliente, limite);
                     cuenta.setSaldo(saldo);
@@ -75,7 +73,6 @@ public class CuentaDAO {
             return null;
         }
     }
-
     public CuentaBancaria buscarPorNumero(String numeroCuenta) throws SQLException {
         String sql = "SELECT * FROM cuenta_bancaria WHERE numero_cuenta = ?";
         try (Connection conn = ConexionBD.obtenerConexion();
@@ -90,7 +87,6 @@ public class CuentaDAO {
         }
         return null;
     }
-
     public List<CuentaBancaria> listarPorCliente(String cedulaCliente) throws SQLException {
         List<CuentaBancaria> cuentas = new ArrayList<>();
         String sql = "SELECT * FROM cuenta_bancaria WHERE cedula_cliente = ?";
@@ -158,5 +154,23 @@ public class CuentaDAO {
             }
         }
         return transacciones;
+    }
+
+    // Nuevo método para listar todas las cuentas
+    public List<CuentaBancaria> listarTodas() throws SQLException {
+        List<CuentaBancaria> cuentas = new ArrayList<>();
+        String sql = "SELECT * FROM cuenta_bancaria";
+        try (Connection conn = ConexionBD.obtenerConexion();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                CuentaBancaria cuenta = crearCuentaDesdeResultSet(rs);
+                if (cuenta != null) {
+                    cuentas.add(cuenta);
+                }
+            }
+        }
+        return cuentas;
     }
 }

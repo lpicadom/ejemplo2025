@@ -1,6 +1,7 @@
 package view;
 
 import controller.ControladorPrincipal;
+import model.Administrador;
 import model.Cliente;
 import model.CuentaAhorro;
 import model.CuentaBancaria;
@@ -19,8 +20,6 @@ public class InterfazPrincipal extends JFrame {
     private JPanel panelCuentas;
     private JTextField txtCedula, txtNombre, txtApellido, txtCorreo, txtDireccion, txtSexo, txtProfesion;
     private JTextArea areaClientes;
-
-    // Campos para la gestión de cuentas
     private JTextField txtCedulaClienteCuenta;
     private JComboBox<String> cmbTipoCuenta;
     private JTextField txtMontoInicial;
@@ -43,11 +42,137 @@ public class InterfazPrincipal extends JFrame {
         tabbedPane.addTab("Clientes", panelClientes);
         tabbedPane.addTab("Cuentas", panelCuentas);
 
+        // Menú principal
+        JMenuBar menuBar = new JMenuBar();
+        JMenu menuAdmin = new JMenu("Administrador");
+        JMenuItem miRegistrarAdmin = new JMenuItem("Registrar Administrador");
+        menuAdmin.add(miRegistrarAdmin);
+
+        JMenu menuReportes = new JMenu("Reportes");
+        JMenuItem miListarClientes = new JMenuItem("Listar todos los Clientes");
+        JMenuItem miListarCuentas = new JMenuItem("Listar todas las Cuentas");
+        JMenuItem miReporteCliente = new JMenuItem("Reporte de Cuentas por Cliente");
+        menuReportes.add(miListarClientes);
+        menuReportes.add(miListarCuentas);
+        menuReportes.add(miReporteCliente);
+
+        menuBar.add(menuAdmin);
+        menuBar.add(menuReportes);
+        setJMenuBar(menuBar);
+
         add(tabbedPane);
         setVisible(true);
+
+        // ActionListeners para el menú
+        miRegistrarAdmin.addActionListener(e -> {
+            try {
+                if (controlador.obtenerAdministrador() != null) {
+                    mostrarError("Ya existe un administrador registrado.");
+                } else {
+                    registrarAdministrador();
+                }
+            } catch (Exception ex) {
+                mostrarError("Error al verificar administrador: " + ex.getMessage());
+            }
+        });
+
+        miListarClientes.addActionListener(e -> listarTodosLosClientes());
+
+        miListarCuentas.addActionListener(e -> listarTodasLasCuentas());
+
+        miReporteCliente.addActionListener(e -> generarReporteCliente());
+    }
+
+    private void registrarAdministrador() {
+        JDialog dialog = new JDialog(this, "Registrar Administrador", true);
+        dialog.setLayout(new GridLayout(5, 2));
+        dialog.setSize(400, 200);
+        dialog.setLocationRelativeTo(this);
+
+        JTextField txtCedulaAdmin = new JTextField();
+        JTextField txtNombreAdmin = new JTextField();
+        JTextField txtApellidoAdmin = new JTextField();
+        JTextField txtCorreoAdmin = new JTextField();
+        JButton btnGuardarAdmin = new JButton("Guardar");
+
+        dialog.add(new JLabel("Cédula:"));
+        dialog.add(txtCedulaAdmin);
+        dialog.add(new JLabel("Nombre:"));
+        dialog.add(txtNombreAdmin);
+        dialog.add(new JLabel("Apellido:"));
+        dialog.add(txtApellidoAdmin);
+        dialog.add(new JLabel("Correo:"));
+        dialog.add(txtCorreoAdmin);
+        dialog.add(btnGuardarAdmin);
+
+        btnGuardarAdmin.addActionListener(e -> {
+            try {
+                Administrador admin = new Administrador(
+                        txtCedulaAdmin.getText(),
+                        txtNombreAdmin.getText(),
+                        txtApellidoAdmin.getText(),
+                        txtCorreoAdmin.getText()
+                );
+                controlador.registrarAdministrador(admin);
+                mostrarMensaje("Administrador registrado con éxito.");
+                dialog.dispose();
+            } catch (Exception ex) {
+                mostrarError(ex.getMessage());
+            }
+        });
+
+        dialog.setVisible(true);
+    }
+
+    private void listarTodosLosClientes() {
+        try {
+            List<Cliente> lista = controlador.listarClientes();
+            areaClientes.setText("Lista de todos los Clientes:\n\n");
+            for (Cliente c : lista) {
+                areaClientes.append("Cédula: " + c.getCedula() + " | Nombre: " + c.getNombre() + " " + c.getApellido() + "\n");
+            }
+        } catch (Exception ex) {
+            mostrarError("Error al listar clientes: " + ex.getMessage());
+        }
+    }
+
+    private void listarTodasLasCuentas() {
+        try {
+            List<CuentaBancaria> cuentas = controlador.listarTodasLasCuentas();
+            areaCuentaInfo.setText("Lista de todas las Cuentas Bancarias:\n\n");
+            for (CuentaBancaria c : cuentas) {
+                areaCuentaInfo.append("Número: " + c.getNumeroCuenta() + " | Tipo: " + c.getTipo() + " | Saldo: " + c.getSaldo() + " | Cliente: " + c.getCedulaCliente() + "\n");
+            }
+        } catch (Exception ex) {
+            mostrarError("Error al listar cuentas: " + ex.getMessage());
+        }
+    }
+
+    private void generarReporteCliente() {
+        String cedula = JOptionPane.showInputDialog(this, "Ingrese la cédula del cliente para el reporte:");
+        if (cedula != null && !cedula.isEmpty()) {
+            try {
+                List<CuentaBancaria> cuentas = controlador.listarCuentasPorCliente(cedula);
+                areaCuentaInfo.setText("Reporte de cuentas para el cliente " + cedula + ":\n\n");
+                for (CuentaBancaria c : cuentas) {
+                    areaCuentaInfo.append("--- Cuenta " + c.getTipo() + " ---\n");
+                    areaCuentaInfo.append("Número: " + c.getNumeroCuenta() + "\n");
+                    areaCuentaInfo.append("Saldo: " + c.getSaldo() + "\n");
+                    areaCuentaInfo.append("Estado: " + (c.isActiva() ? "Activa" : "Inactiva") + "\n");
+                    areaCuentaInfo.append("Fecha de Creación: " + c.getFechaCreacion() + "\n");
+                    if (c instanceof CuentaCredito) {
+                        areaCuentaInfo.append("Límite de Crédito: " + ((CuentaCredito) c).getLimiteCredito() + "\n");
+                    }
+                    areaCuentaInfo.append("-----------------------------\n");
+                }
+            } catch (Exception ex) {
+                mostrarError("Error al generar reporte: " + ex.getMessage());
+            }
+        }
     }
 
     private JPanel crearPanelClientes() {
+        // ... (el código para crear el panel de clientes es el mismo)
         JPanel panel = new JPanel(new BorderLayout());
         JPanel form = new JPanel(new GridLayout(8, 2));
 
@@ -137,11 +262,11 @@ public class InterfazPrincipal extends JFrame {
                 mostrarError("Error al listar: " + ex.getMessage());
             }
         });
-
         return panel;
     }
 
     private JPanel crearPanelCuentas() {
+        // ... (el código para crear el panel de cuentas es el mismo)
         JPanel panel = new JPanel(new BorderLayout());
 
         JPanel crearCuentaPanel = new JPanel(new GridLayout(4, 2));
@@ -210,36 +335,28 @@ public class InterfazPrincipal extends JFrame {
                 mostrarError(ex.getMessage());
             }
         });
-
-        // Se agregó la lógica para el botón de depósito
         btnDepositar.addActionListener(e -> {
             try {
                 String numeroCuenta = txtNumeroCuenta.getText();
                 double monto = Double.parseDouble(txtMontoOperacion.getText());
-                controlador.depositar(numeroCuenta, monto); // El controlador ahora maneja la lógica
+                controlador.depositar(numeroCuenta, monto);
                 mostrarMensaje("Depósito exitoso.");
-                // Se refresca la lista de cuentas para mostrar el nuevo saldo
                 refrescarListaCuentas(txtCedulaClienteCuenta.getText());
             } catch (Exception ex) {
                 mostrarError(ex.getMessage());
             }
         });
-
-        // Se agregó la lógica para el botón de retiro
         btnRetirar.addActionListener(e -> {
             try {
                 String numeroCuenta = txtNumeroCuenta.getText();
                 double monto = Double.parseDouble(txtMontoOperacion.getText());
-                controlador.retirar(numeroCuenta, monto); // El controlador ahora maneja la lógica
+                controlador.retirar(numeroCuenta, monto);
                 mostrarMensaje("Retiro exitoso.");
-                // Se refresca la lista de cuentas para mostrar el nuevo saldo
                 refrescarListaCuentas(txtCedulaClienteCuenta.getText());
             } catch (Exception ex) {
                 mostrarError(ex.getMessage());
             }
         });
-
-        // Se agregó la lógica para el botón de historial
         btnMostrarHistorial.addActionListener(e -> {
             try {
                 String numeroCuenta = txtNumeroCuenta.getText();
@@ -254,8 +371,6 @@ public class InterfazPrincipal extends JFrame {
                 mostrarError(ex.getMessage());
             }
         });
-
-        // Se agregó la lógica para el botón de listar cuentas
         btnListarCuentas.addActionListener(e -> {
             try {
                 String cedula = txtCedulaClienteCuenta.getText();
