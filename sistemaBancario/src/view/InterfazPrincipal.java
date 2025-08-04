@@ -211,48 +211,51 @@ public class InterfazPrincipal extends JFrame {
             }
         });
 
+        // Se agregó la lógica para el botón de depósito
         btnDepositar.addActionListener(e -> {
             try {
                 String numeroCuenta = txtNumeroCuenta.getText();
                 double monto = Double.parseDouble(txtMontoOperacion.getText());
-                CuentaBancaria cuenta = controlador.buscarCuenta(numeroCuenta);
-
-                if (cuenta == null) {
-                    throw new Exception("Cuenta no encontrada.");
-                }
-
-                // Las cuentas de crédito tienen un método 'abonar' en lugar de 'depositar'
-                if (cuenta instanceof CuentaCredito) {
-                    ((CuentaCredito) cuenta).abonar(monto);
-                } else {
-                    cuenta.depositar(monto);
-                }
-
-                mostrarMensaje("Operación exitosa. Saldo actual: " + cuenta.getSaldo());
-                limpiarFormularioOperaciones();
+                controlador.depositar(numeroCuenta, monto); // El controlador ahora maneja la lógica
+                mostrarMensaje("Depósito exitoso.");
+                // Se refresca la lista de cuentas para mostrar el nuevo saldo
+                refrescarListaCuentas(txtCedulaClienteCuenta.getText());
             } catch (Exception ex) {
                 mostrarError(ex.getMessage());
             }
         });
 
+        // Se agregó la lógica para el botón de retiro
         btnRetirar.addActionListener(e -> {
             try {
                 String numeroCuenta = txtNumeroCuenta.getText();
                 double monto = Double.parseDouble(txtMontoOperacion.getText());
-                CuentaBancaria cuenta = controlador.buscarCuenta(numeroCuenta);
-
-                if (cuenta == null) {
-                    throw new Exception("Cuenta no encontrada.");
-                }
-
-                cuenta.retirar(monto);
-                mostrarMensaje("Operación exitosa. Saldo actual: " + cuenta.getSaldo());
-                limpiarFormularioOperaciones();
+                controlador.retirar(numeroCuenta, monto); // El controlador ahora maneja la lógica
+                mostrarMensaje("Retiro exitoso.");
+                // Se refresca la lista de cuentas para mostrar el nuevo saldo
+                refrescarListaCuentas(txtCedulaClienteCuenta.getText());
             } catch (Exception ex) {
                 mostrarError(ex.getMessage());
             }
         });
 
+        // Se agregó la lógica para el botón de historial
+        btnMostrarHistorial.addActionListener(e -> {
+            try {
+                String numeroCuenta = txtNumeroCuenta.getText();
+                if (numeroCuenta.isEmpty()) throw new Exception("Debe ingresar el número de cuenta.");
+
+                List<Transaccion> historial = controlador.obtenerHistorialTransacciones(numeroCuenta);
+                areaCuentaInfo.setText("Historial de transacciones de la cuenta " + numeroCuenta + ":\n");
+                for (Transaccion t : historial) {
+                    areaCuentaInfo.append(t.getResumen() + "\n");
+                }
+            } catch (Exception ex) {
+                mostrarError(ex.getMessage());
+            }
+        });
+
+        // Se agregó la lógica para el botón de listar cuentas
         btnListarCuentas.addActionListener(e -> {
             try {
                 String cedula = txtCedulaClienteCuenta.getText();
@@ -269,6 +272,19 @@ public class InterfazPrincipal extends JFrame {
         });
 
         return panel;
+    }
+
+    // Método auxiliar para refrescar la lista de cuentas
+    private void refrescarListaCuentas(String cedulaCliente) {
+        try {
+            List<CuentaBancaria> cuentas = controlador.listarCuentasPorCliente(cedulaCliente);
+            areaCuentaInfo.setText("Cuentas del cliente " + cedulaCliente + ":\n");
+            for (CuentaBancaria c : cuentas) {
+                areaCuentaInfo.append("Número: " + c.getNumeroCuenta() + " | Tipo: " + c.getTipo() + " | Saldo: " + c.getSaldo() + "\n");
+            }
+        } catch (Exception ex) {
+            mostrarError("Error al refrescar las cuentas: " + ex.getMessage());
+        }
     }
 
     private Cliente obtenerClienteDelFormulario() throws Exception {

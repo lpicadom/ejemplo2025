@@ -5,6 +5,7 @@ import dao.CuentaDAO;
 import model.*;
 
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 
 public class ControladorPrincipal {
@@ -57,13 +58,16 @@ public class ControladorPrincipal {
             throw new Exception("Cuenta no encontrada.");
         }
 
-        // Las cuentas de crédito no permiten depósitos, solo abonos.
         if (cuenta instanceof CuentaCredito) {
             throw new Exception("Use el método abonar para cuentas de crédito.");
         }
 
         cuenta.depositar(monto);
         cuentaDAO.actualizarSaldo(cuenta.getNumeroCuenta(), cuenta.getSaldo());
+
+        // Se agregó la lógica para guardar la transacción en la base de datos
+        Transaccion transaccion = new Transaccion(monto, new Date(), numeroCuenta);
+        cuentaDAO.guardarTransaccion(transaccion);
     }
 
     public void retirar(String numeroCuenta, double monto) throws Exception {
@@ -74,6 +78,10 @@ public class ControladorPrincipal {
 
         cuenta.retirar(monto);
         cuentaDAO.actualizarSaldo(cuenta.getNumeroCuenta(), cuenta.getSaldo());
+
+        // Se agregó la lógica para guardar la transacción en la base de datos
+        Transaccion transaccion = new Transaccion(-monto, new Date(), numeroCuenta);
+        cuentaDAO.guardarTransaccion(transaccion);
     }
 
     public void abonar(String numeroCuenta, double monto) throws Exception {
@@ -88,6 +96,10 @@ public class ControladorPrincipal {
 
         ((CuentaCredito) cuenta).abonar(monto);
         cuentaDAO.actualizarSaldo(cuenta.getNumeroCuenta(), cuenta.getSaldo());
+
+        // Se agregó la lógica para guardar la transacción en la base de datos
+        Transaccion transaccion = new Transaccion(monto, new Date(), numeroCuenta);
+        cuentaDAO.guardarTransaccion(transaccion);
     }
 
     public CuentaBancaria buscarCuenta(String numeroCuenta) throws SQLException {
@@ -100,5 +112,10 @@ public class ControladorPrincipal {
 
     public void cambiarEstadoCuenta(String numeroCuenta, boolean activa) throws SQLException {
         cuentaDAO.actualizarEstado(numeroCuenta, activa);
+    }
+
+    // Se agregó el método para obtener el historial de transacciones
+    public List<Transaccion> obtenerHistorialTransacciones(String numeroCuenta) throws SQLException {
+        return cuentaDAO.listarTransacciones(numeroCuenta);
     }
 }
