@@ -1,22 +1,24 @@
-package BL;
+package model;
 
 import java.util.*;
 
 public abstract class CuentaBancaria {
-    private String numeroCuenta;
-    private double saldo;
-    private boolean activa;
-    private Date fechaCreacion;
-    private Cliente cliente;
-    private List<Transaccion> transacciones;
+    protected String numeroCuenta;
+    protected double saldo;
+    protected boolean activa;
+    protected Date fechaCreacion;
+    protected String tipo;
+    protected String cedulaCliente;
 
-    public CuentaBancaria(Cliente cliente) {
+    protected List<Transaccion> transacciones;
+
+    public CuentaBancaria(String cedulaCliente) {
         this.numeroCuenta = generarNumeroCuenta();
         this.saldo = 0;
         this.activa = true;
         this.fechaCreacion = new Date();
-        this.cliente = cliente;
         this.transacciones = new ArrayList<>();
+        this.cedulaCliente = cedulaCliente;
     }
 
     private String generarNumeroCuenta() {
@@ -27,17 +29,29 @@ public abstract class CuentaBancaria {
     public abstract void retirar(double monto) throws Exception;
 
     public void agregarTransaccion(double monto) {
-        transacciones.add(new Transaccion(monto, new Date(), this));
+        transacciones.add(new Transaccion(monto, new Date(), numeroCuenta));
     }
 
     // Getters y Setters
     public String getNumeroCuenta() { return numeroCuenta; }
     public double getSaldo() { return saldo; }
     public void setSaldo(double saldo) { this.saldo = saldo; }
+
     public boolean isActiva() { return activa; }
     public void setActiva(boolean activa) { this.activa = activa; }
-    public Cliente getCliente() { return cliente; }
+
+    public Date getFechaCreacion() { return fechaCreacion; }
+
     public List<Transaccion> getTransacciones() { return transacciones; }
 
-    public abstract String getTipoCuenta();
+    public String getTipo() { return tipo; }
+
+    public String getCedulaCliente() { return cedulaCliente; }
+
+    public void setNumeroCuenta(String numeroCuenta) {
+        this.numeroCuenta = numeroCuenta;
+    }
+
 }
+
+

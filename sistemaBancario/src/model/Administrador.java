@@ -1,4 +1,4 @@
-package BL;
+package model;
 
 public class Administrador {
     private int idAdministrador;

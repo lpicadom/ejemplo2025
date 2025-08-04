@@ -1,4 +1,4 @@
-package BL;
+package model;
 
 import java.util.Properties;
 import java.io.*;
