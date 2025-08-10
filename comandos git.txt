@@ -19,3 +19,14 @@ git branch --all PARA VER TODOS LOS BRANCHES
 git checkout NOMBRE DEL BRANCH .... Para cambiar de branch
 
 git push -u origin main
+
+
+----- volver al codigo del ultimo commit ----
+
+git reset --hard
+git clean -fd
+
+
+---- todo el codigo en texto plano ---- 
+
+(for /r %i in (*.java) do @type "%i" & echo. & echo --- Fin de Archivo: %i --- & echo.) > "%USERPROFILE%\Desktop\todo_el_codigo.txt"
