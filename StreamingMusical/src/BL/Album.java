@@ -18,6 +18,7 @@ public class Album {
         this.anioLanzamiento = anioLanzamiento;
     }
 
+    // Getters y Setters
     public int getId() {
         return id;
     }

@@ -1,63 +1,134 @@
 package BL;
 
+import DAO.*;
 import java.util.List;
+import java.util.ArrayList;
+import java.time.LocalDateTime;
 
 public class BL {
     private Usuario usuario;
     private Reproductor reproductor;
-    private BibliotecaMusical biblioteca;
+    private Usuario administrador;
+
+    private UsuarioDAO usuarioDAO;
+    private CancionDAO cancionDAO;
+    private ArtistaDAO artistaDAO;
+    private AlbumDAO albumDAO;
+    private ListaDeReproduccionDAO listaDeReproduccionDAO;
+    private HistorialReproduccionDAO historialDAO;
+    private UsuarioCancionDAO usuarioCancionDAO;
 
     public BL() {
         this.reproductor = new Reproductor();
-        this.biblioteca = new BibliotecaMusical();
+        this.administrador = null;
+
+        this.usuarioDAO = new UsuarioDAO();
+        this.cancionDAO = new CancionDAO();
+        this.artistaDAO = new ArtistaDAO();
+        this.albumDAO = new AlbumDAO();
+        this.listaDeReproduccionDAO = new ListaDeReproduccionDAO();
+        this.historialDAO = new HistorialReproduccionDAO();
+        this.usuarioCancionDAO = new UsuarioCancionDAO();
+
+        this.administrador = usuarioDAO.obtenerAdmin();
     }
 
-
-    public void crearUsuario(String nombre, String correo, String contrasena) {
-        this.usuario = new Usuario(1, nombre, correo, contrasena, "Gratis");
-        ListaDeReproduccion lista = new ListaDeReproduccion(1, "Mi Lista", usuario);
-        usuario.getListasDeReproduccion().add(lista); // poner el id de los usuarios a que avance +1 conforme se generen mas
+    public Usuario crearUsuario(String nombre, String correo, String contrasena) {
+        Usuario nuevoUsuario = new Usuario(nombre, correo, nombre, contrasena);
+        usuarioDAO.guardarUsuario(nuevoUsuario);
+        this.setUsuario(nuevoUsuario);
+        System.out.println("Usuario creado correctamente con bono de $2.99.");
+        return nuevoUsuario;
     }
 
+    public boolean registrarAdmin(String correo, String nombreUsuario, String contrasena) {
+        if (this.administrador != null) {
+            System.out.println("Ya existe un administrador registrado.");
+            return false;
+        }
+        if (!Usuario.validarContrasena(contrasena)) {
+            System.out.println("La contraseña del administrador no cumple con los requisitos.");
+            return false;
+        }
+        this.administrador = new Usuario(-1, "Administrador", null, null, null, null, correo, nombreUsuario, contrasena, true);
+        usuarioDAO.guardarAdmin(administrador);
+        System.out.println("Administrador registrado correctamente.");
+        return true;
+    }
+
+    public Usuario iniciarSesion(String nombreUsuario, String contrasena) {
+        Usuario usuario = usuarioDAO.obtenerUsuarioPorNombreUsuario(nombreUsuario);
+        if (usuario != null && usuario.getContrasena().equals(contrasena)) {
+            this.setUsuario(usuario);
+            System.out.println("Sesión iniciada como usuario: " + usuario.getNombre());
+            return usuario;
+        }
+        if (this.administrador != null && this.administrador.getNombreUsuario().equals(nombreUsuario) && this.administrador.getContrasena().equals(contrasena)) {
+            System.out.println("Sesión iniciada como administrador.");
+            return this.administrador;
+        }
+        System.out.println("Nombre de usuario o contraseña incorrectos.");
+        return null;
+    }
 
     public Cancion agregarCancionManual(int idArtista, String nombreArtista, String descripcionArtista,
                                         int idAlbum, String tituloAlbum, int anioAlbum,
-                                        int idCancion, String tituloCancion, int duracion,
-                                        String genero, String ruta) {
-
-        // Buscar si ya existe el artista
-        Artista artista = biblioteca.buscarArtistaPorId(idArtista);
+                                        String tituloCancion, int duracion,
+                                        String genero, String ruta, String compositor, double precio) {
+        Artista artista = artistaDAO.obtenerArtistaPorId(idArtista);
         if (artista == null) {
             artista = new Artista(idArtista, nombreArtista, descripcionArtista);
-            biblioteca.getArtistas().add(artista);
+            artistaDAO.guardarArtista(artista);
         }
 
-        // Buscar si ya existe el álbum
-        Album album = artista.buscarAlbumPorId(idAlbum);
+        Album album = albumDAO.obtenerAlbumPorId(idAlbum);
         if (album == null) {
             album = new Album(idAlbum, tituloAlbum, artista, anioAlbum);
-            artista.getAlbumes().add(album);
-            biblioteca.getAlbumes().add(album);
+            albumDAO.guardarAlbum(album);
         }
 
-        // Crear la canción
-        Cancion cancion = new Cancion(idCancion, tituloCancion, artista, album, duracion, genero, ruta);
-        album.getCanciones().add(cancion);
-        biblioteca.getCanciones().add(cancion);
-
-        return cancion; // <-- Devuelve la canción creada
+        Cancion cancion = new Cancion(0, tituloCancion, artista, album, duracion, genero, ruta, compositor, precio);
+        cancionDAO.guardarCancion(cancion);
+        return cancion;
     }
 
-    public void reproducirCancion(int index) {
-        if (index >= 0 && index < biblioteca.getCanciones().size()) {
-            Cancion cancion = biblioteca.getCanciones().get(index);
-            reproductor.setCancionActual(cancion);
-            reproductor.setEstado("Reproduciendo");
-
-            if (usuario != null) {
-                EntradaHistorial entrada = new EntradaHistorial(cancion, java.time.LocalDateTime.now());
-                usuario.getHistorialReproduccion().getEntradas().add(entrada);
+    public void reproducirCancion(Cancion cancion) {
+        if (usuario == null) {
+            reproductor.reproducir(cancion.getArchivoRuta());
+        } else if (usuario.esAdmin() || usuario.haCompradoCancion(cancion)) {
+            reproductor.reproducir(cancion.getArchivoRuta());
+            if (!usuario.esAdmin()) {
+                historialDAO.guardarEntrada(usuario.getId(), cancion.getId());
+                System.out.println("Canción '" + cancion.getTitulo() + "' agregada al historial.");
             }
+        } else {
+            System.out.println("No has comprado esta canción. Solo puedes reproducir un preview de 30 segundos.");
+            reproductor.reproducirPreview(cancion.getArchivoRuta(), 30);
+        }
+    }
+
+    public void comprarCancion(Cancion cancion) {
+        if (usuario == null) {
+            System.out.println("Debe iniciar sesión para comprar canciones.");
+            return;
+        }
+
+        for (Cancion c : usuario.getCancionesCompradas()) {
+            if (c.getId() == cancion.getId()) {
+                System.out.println("❌ Ya has comprado esta canción.");
+                return;
+            }
+        }
+
+        if (usuario.getSaldo() >= cancion.getPrecio()) {
+            double nuevoSaldo = usuario.getSaldo() - cancion.getPrecio();
+            usuario.setSaldo(nuevoSaldo);
+            usuarioCancionDAO.guardarCompra(usuario.getId(), cancion.getId());
+            usuarioDAO.actualizarSaldo(usuario.getId(), nuevoSaldo);
+            usuario.getCancionesCompradas().add(cancion);
+            System.out.println("✅ Canción '" + cancion.getTitulo() + "' comprada. Nuevo saldo: $" + nuevoSaldo);
+        } else {
+            System.out.println("Saldo insuficiente para comprar esta canción.");
         }
     }
 
@@ -67,8 +138,7 @@ public class BL {
             return;
         }
 
-        List<EntradaHistorial> entradas = usuario.getHistorialReproduccion().getEntradas();
-
+        List<EntradaHistorial> entradas = historialDAO.obtenerHistorialPorUsuario(usuario.getId());
         if (entradas.isEmpty()) {
             System.out.println("El historial de reproducción está vacío.");
             return;
@@ -82,18 +152,65 @@ public class BL {
         }
     }
 
+    public List<Cancion> obtenerTopCanciones() {
+        return cancionDAO.obtenerTop5Canciones();
+    }
 
+    public List<Cancion> obtenerTodasLasCanciones() {
+        return cancionDAO.obtenerTodasLasCanciones();
+    }
 
+    // Método agregado para obtener una canción por su ID desde la capa DAO
+    public Cancion obtenerCancionPorId(int idCancion) {
+        return cancionDAO.obtenerCancionPorId(idCancion);
+    }
+
+    public Cancion buscarCancionPorTitulo(String titulo) {
+        return cancionDAO.buscarCancionPorTitulo(titulo);
+    }
+
+    public List<ListaDeReproduccion> obtenerListasDeReproduccion(int idUsuario) {
+        return listaDeReproduccionDAO.obtenerListasPorUsuario(idUsuario);
+    }
+
+    public void crearListaDeReproduccion(String nombreLista) {
+        if (usuario == null) {
+            System.out.println("Debe iniciar sesión para crear listas de reproducción.");
+            return;
+        }
+        ListaDeReproduccion nuevaLista = new ListaDeReproduccion(0, nombreLista, new ArrayList<Cancion>());
+        int idGenerado = listaDeReproduccionDAO.guardarListaDeReproduccion(nuevaLista, usuario.getId());
+        if (idGenerado != -1) {
+            nuevaLista.setId(idGenerado);
+            System.out.println("✅ Lista '" + nombreLista + "' creada correctamente.");
+            usuario.getListasDeReproduccion().add(nuevaLista);
+        } else {
+            System.out.println("❌ No se pudo crear la lista.");
+        }
+    }
+
+    public void agregarCancionALista(int idLista, int idCancion) {
+        listaDeReproduccionDAO.guardarCancionEnLista(idLista, idCancion);
+        System.out.println("✅ Canción agregada a la base de datos.");
+    }
+
+    public List<Usuario> obtenerTodosLosUsuarios() {
+        return usuarioDAO.obtenerTodosLosUsuarios();
+    }
 
     public Usuario getUsuario() {
         return usuario;
     }
 
-    public Reproductor getReproductor() {
-        return reproductor;
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
     }
 
-    public BibliotecaMusical getBiblioteca() {
-        return biblioteca;
+    public Usuario getAdministrador() {
+        return administrador;
+    }
+
+    public Reproductor getReproductor() {
+        return reproductor;
     }
 }

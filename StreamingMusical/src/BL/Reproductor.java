@@ -18,12 +18,19 @@ public class Reproductor {
         return cancionActual;
     }
 
-
     public void setCancionActual(Cancion cancionActual) {
         this.cancionActual = cancionActual;
         if (cancionActual != null) {
             mp3Player.reproducir(cancionActual.getArchivoRuta());
         }
+    }
+
+    public void reproducirPreview(String rutaArchivo, int segundos) {
+        mp3Player.reproducirPreview(rutaArchivo, segundos);
+    }
+
+    public void reproducir(String rutaArchivo) {
+        mp3Player.reproducir(rutaArchivo);
     }
 
     public int getVolumen() {
