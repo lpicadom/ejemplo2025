@@ -21,7 +21,6 @@ public class BL {
     public BL() {
         this.reproductor = new Reproductor();
         this.administrador = null;
-
         this.usuarioDAO = new UsuarioDAO();
         this.cancionDAO = new CancionDAO();
         this.artistaDAO = new ArtistaDAO();
@@ -59,6 +58,9 @@ public class BL {
     public Usuario iniciarSesion(String nombreUsuario, String contrasena) {
         Usuario usuario = usuarioDAO.obtenerUsuarioPorNombreUsuario(nombreUsuario);
         if (usuario != null && usuario.getContrasena().equals(contrasena)) {
+            // Cargar datos adicionales del usuario al iniciar sesión
+            usuario.setCancionesCompradas(usuarioCancionDAO.obtenerCancionesCompradasPorUsuario(usuario.getId()));
+            usuario.setListasDeReproduccion(listaDeReproduccionDAO.obtenerListasPorUsuario(usuario.getId()));
             this.setUsuario(usuario);
             System.out.println("Sesión iniciada como usuario: " + usuario.getNombre());
             return usuario;
@@ -113,11 +115,9 @@ public class BL {
             return;
         }
 
-        for (Cancion c : usuario.getCancionesCompradas()) {
-            if (c.getId() == cancion.getId()) {
-                System.out.println("❌ Ya has comprado esta canción.");
-                return;
-            }
+        if (usuario.haCompradoCancion(cancion)) {
+            System.out.println("❌ Ya has comprado esta canción.");
+            return;
         }
 
         if (usuario.getSaldo() >= cancion.getPrecio()) {
@@ -125,6 +125,7 @@ public class BL {
             usuario.setSaldo(nuevoSaldo);
             usuarioCancionDAO.guardarCompra(usuario.getId(), cancion.getId());
             usuarioDAO.actualizarSaldo(usuario.getId(), nuevoSaldo);
+            // Actualiza la lista en memoria del usuario después de la compra
             usuario.getCancionesCompradas().add(cancion);
             System.out.println("✅ Canción '" + cancion.getTitulo() + "' comprada. Nuevo saldo: $" + nuevoSaldo);
         } else {
@@ -147,8 +148,40 @@ public class BL {
         System.out.println("🎵 Historial de reproducción:");
         for (EntradaHistorial entrada : entradas) {
             Cancion c = entrada.getCancion();
-            System.out.println("- " + c.getTitulo() + " por " + c.getArtista().getNombre() +
-                    " [" + entrada.getFechaHora().toString() + "]");
+            // Verifica si la canción existe antes de imprimir
+            if(c != null) {
+                System.out.println("- " + c.getTitulo() + " por " + c.getArtista().getNombre() +
+                        " [" + entrada.getFechaHora().toString() + "]");
+            }
+        }
+    }
+
+    // Método para obtener las listas de reproducción y las carga con las canciones
+    public void mostrarListasDeReproduccion() {
+        if (usuario == null) {
+            System.out.println("No hay usuario activo.");
+            return;
+        }
+
+        List<ListaDeReproduccion> listas = listaDeReproduccionDAO.obtenerListasPorUsuario(usuario.getId());
+        usuario.setListasDeReproduccion(listas);
+
+        if (listas.isEmpty()) {
+            System.out.println("No tienes listas de reproducción.");
+            return;
+        }
+
+        System.out.println("Mis listas de reproducción:");
+        for(ListaDeReproduccion lista : listas) {
+            System.out.println("Nombre: " + lista.getNombre() + " (ID: " + lista.getId() + ")");
+            if (!lista.getCanciones().isEmpty()) {
+                System.out.println("  Canciones:");
+                for (Cancion cancion : lista.getCanciones()) {
+                    System.out.println("    - " + cancion.getTitulo() + " por " + cancion.getArtista().getNombre());
+                }
+            } else {
+                System.out.println("  (Vacía)");
+            }
         }
     }
 
@@ -183,6 +216,7 @@ public class BL {
         if (idGenerado != -1) {
             nuevaLista.setId(idGenerado);
             System.out.println("✅ Lista '" + nombreLista + "' creada correctamente.");
+            // Actualiza la lista en memoria del usuario
             usuario.getListasDeReproduccion().add(nuevaLista);
         } else {
             System.out.println("❌ No se pudo crear la lista.");
@@ -191,6 +225,16 @@ public class BL {
 
     public void agregarCancionALista(int idLista, int idCancion) {
         listaDeReproduccionDAO.guardarCancionEnLista(idLista, idCancion);
+        // Recargar la lista en memoria para que se muestre la canción
+        ListaDeReproduccion listaActualizada = listaDeReproduccionDAO.obtenerListaPorId(idLista);
+        if (listaActualizada != null) {
+            for (ListaDeReproduccion lista : usuario.getListasDeReproduccion()) {
+                if (lista.getId() == idLista) {
+                    lista.setCanciones(listaActualizada.getCanciones());
+                    break;
+                }
+            }
+        }
         System.out.println("✅ Canción agregada a la base de datos.");
     }
 
@@ -212,5 +256,24 @@ public class BL {
 
     public Reproductor getReproductor() {
         return reproductor;
+    }
+
+    // Nuevo método para mostrar las canciones compradas
+    public void mostrarCancionesCompradas() {
+        if (usuario == null) {
+            System.out.println("No hay usuario activo.");
+            return;
+        }
+
+        List<Cancion> compradas = usuarioCancionDAO.obtenerCancionesCompradasPorUsuario(usuario.getId());
+        if (compradas.isEmpty()) {
+            System.out.println("No has comprado ninguna canción.");
+            return;
+        }
+
+        System.out.println("🎵 Canciones compradas:");
+        for (Cancion cancion : compradas) {
+            System.out.println("- " + cancion.getTitulo() + " - " + cancion.getArtista().getNombre());
+        }
     }
 }

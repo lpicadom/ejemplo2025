@@ -9,8 +9,10 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDateTime;
 
 public class HistorialReproduccionDAO {
+    private CancionDAO cancionDAO = new CancionDAO();
 
     public void guardarEntrada(int idUsuario, int idCancion) {
         String sql = "INSERT INTO historial_reproduccion (id_usuario, id_cancion) VALUES (?, ?)";
@@ -32,9 +34,16 @@ public class HistorialReproduccionDAO {
             pstmt.setInt(1, idUsuario);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    Cancion cancion = new CancionDAO().obtenerCancionPorId(rs.getInt("id_cancion"));
-                    Timestamp fechaHora = rs.getTimestamp("fecha_hora_reproduccion");
-                    historial.add(new EntradaHistorial(cancion, fechaHora.toLocalDateTime()));
+                    int idCancion = rs.getInt("id_cancion");
+                    Timestamp timestamp = rs.getTimestamp("fecha_hora_reproduccion");
+
+                    // Obtener la canción completa en lugar de solo su ID
+                    Cancion cancion = cancionDAO.obtenerCancionPorId(idCancion);
+
+                    if(cancion != null) {
+                        EntradaHistorial entrada = new EntradaHistorial(cancion, timestamp.toLocalDateTime());
+                        historial.add(entrada);
+                    }
                 }
             }
         } catch (SQLException e) {

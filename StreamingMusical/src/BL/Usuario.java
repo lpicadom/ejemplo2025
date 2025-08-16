@@ -33,8 +33,22 @@ public class Usuario {
         this.contrasena = contrasena;
         this.saldo = saldo;
         this.esAdmin = esAdmin;
+        // Se inicializan aquí, pero se cargarán desde el DAO en la capa BL
         this.cancionesCompradas = new ArrayList<>();
         this.listasDeReproduccion = new ArrayList<>();
+    }
+
+    // Nuevo constructor para cargar desde la base de datos
+    public Usuario(int id, String nombre, String correo, String nombreUsuario, String contrasena, double saldo, boolean esAdmin, List<Cancion> cancionesCompradas, List<ListaDeReproduccion> listasDeReproduccion) {
+        this.id = id;
+        this.nombre = nombre;
+        this.correo = correo;
+        this.nombreUsuario = nombreUsuario;
+        this.contrasena = contrasena;
+        this.saldo = saldo;
+        this.esAdmin = esAdmin;
+        this.cancionesCompradas = cancionesCompradas;
+        this.listasDeReproduccion = listasDeReproduccion;
     }
 
     public Usuario(int id, String nombre, String identificacion, String fechaNacimiento, String nacionalidad, String avatar, String correo, String nombreUsuario, String contrasena, boolean esAdmin) {

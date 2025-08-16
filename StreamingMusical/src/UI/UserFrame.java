@@ -1,40 +1,46 @@
 package UI;
 
-import BL.*;
-
-import javax.swing.*;
-import java.awt.*;
+import BL.BL;
+import BL.Cancion;
+import BL.ListaDeReproduccion;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.List;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 
 public class UserFrame extends JFrame {
     private BL app;
 
+    private JButton btnExplorar, btnTop, btnHistorial, btnCompradas, btnCrearLista, btnVerListas, btnSalir;
+
     public UserFrame(BL app) {
         this.app = app;
-
-        setTitle("🎵 Streaming Musical - Usuario");
-        setSize(600, 400);
+        setTitle("Usuario: " + app.getUsuario().getNombreUsuario());
+        setSize(400, 300);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        JPanel panel = new JPanel(new GridLayout(0, 1, 5, 5));
+        // Componentes
+        btnExplorar = new JButton("Explorar Canción");
+        btnTop = new JButton("Top 5 Canciones");
+        btnHistorial = new JButton("Historial");
+        btnCompradas = new JButton("Canciones Compradas");
+        btnCrearLista = new JButton("Crear Lista");
+        btnVerListas = new JButton("Mis listas de reproducción");
+        btnSalir = new JButton("Cerrar Sesión");
 
-        JButton btnExplorar = new JButton("Explorar Biblioteca");
-        JButton btnTop = new JButton("Top 5 Canciones");
-        JButton btnListas = new JButton("Mis Listas de Reproducción");
-        JButton btnCrearLista = new JButton("Crear Lista");
-        JButton btnComprar = new JButton("Comprar Canción");
-        JButton btnHistorial = new JButton("Historial");
-        JButton btnCompradas = new JButton("Canciones Compradas");
-        JButton btnSalir = new JButton("Cerrar Sesión");
-
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(7, 1, 10, 10));
         panel.add(btnExplorar);
         panel.add(btnTop);
-        panel.add(btnListas);
-        panel.add(btnCrearLista);
-        panel.add(btnComprar);
         panel.add(btnHistorial);
         panel.add(btnCompradas);
+        panel.add(btnCrearLista);
+        panel.add(btnVerListas);
         panel.add(btnSalir);
 
         add(panel);
@@ -63,6 +69,20 @@ public class UserFrame extends JFrame {
         });
 
         btnHistorial.addActionListener(e -> app.mostrarHistorial());
+
+        // Listener para ver canciones compradas
+        btnCompradas.addActionListener(e -> app.mostrarCancionesCompradas());
+
+        // Listener para crear lista de reproducción
+        btnCrearLista.addActionListener(e -> {
+            String nombreLista = JOptionPane.showInputDialog(this, "Nombre de la nueva lista:");
+            if (nombreLista != null && !nombreLista.trim().isEmpty()) {
+                app.crearListaDeReproduccion(nombreLista);
+            }
+        });
+
+        // Listener para ver listas de reproducción
+        btnVerListas.addActionListener(e -> app.mostrarListasDeReproduccion());
 
         btnSalir.addActionListener(e -> {
             app.setUsuario(null);
