@@ -3,7 +3,6 @@ package BL;
 import DAO.*;
 import java.util.List;
 import java.util.ArrayList;
-import java.time.LocalDateTime;
 
 public class BL {
     private Usuario usuario;
@@ -20,7 +19,6 @@ public class BL {
 
     public BL() {
         this.reproductor = new Reproductor();
-        this.administrador = null;
         this.usuarioDAO = new UsuarioDAO();
         this.cancionDAO = new CancionDAO();
         this.artistaDAO = new ArtistaDAO();
@@ -32,44 +30,36 @@ public class BL {
         this.administrador = usuarioDAO.obtenerAdmin();
     }
 
-    public Usuario crearUsuario(String nombre, String correo, String contrasena) {
+    public String crearUsuario(String nombre, String correo, String contrasena) {
         Usuario nuevoUsuario = new Usuario(nombre, correo, nombre, contrasena);
         usuarioDAO.guardarUsuario(nuevoUsuario);
         this.setUsuario(nuevoUsuario);
-        System.out.println("Usuario creado correctamente con bono de $2.99.");
-        return nuevoUsuario;
+        return "✅ Usuario creado correctamente con bono de $2.99.";
     }
 
-    public boolean registrarAdmin(String correo, String nombreUsuario, String contrasena) {
+    public String registrarAdmin(String correo, String nombreUsuario, String contrasena) {
         if (this.administrador != null) {
-            System.out.println("Ya existe un administrador registrado.");
-            return false;
+            return "❌ Ya existe un administrador registrado.";
         }
         if (!Usuario.validarContrasena(contrasena)) {
-            System.out.println("La contraseña del administrador no cumple con los requisitos.");
-            return false;
+            return "❌ La contraseña del administrador no cumple con los requisitos.";
         }
         this.administrador = new Usuario(-1, "Administrador", null, null, null, null, correo, nombreUsuario, contrasena, true);
         usuarioDAO.guardarAdmin(administrador);
-        System.out.println("Administrador registrado correctamente.");
-        return true;
+        return "✅ Administrador registrado correctamente.";
     }
 
     public Usuario iniciarSesion(String nombreUsuario, String contrasena) {
         Usuario usuario = usuarioDAO.obtenerUsuarioPorNombreUsuario(nombreUsuario);
         if (usuario != null && usuario.getContrasena().equals(contrasena)) {
-            // Cargar datos adicionales del usuario al iniciar sesión
             usuario.setCancionesCompradas(usuarioCancionDAO.obtenerCancionesCompradasPorUsuario(usuario.getId()));
             usuario.setListasDeReproduccion(listaDeReproduccionDAO.obtenerListasPorUsuario(usuario.getId()));
             this.setUsuario(usuario);
-            System.out.println("Sesión iniciada como usuario: " + usuario.getNombre());
             return usuario;
         }
         if (this.administrador != null && this.administrador.getNombreUsuario().equals(nombreUsuario) && this.administrador.getContrasena().equals(contrasena)) {
-            System.out.println("Sesión iniciada como administrador.");
             return this.administrador;
         }
-        System.out.println("Nombre de usuario o contraseña incorrectos.");
         return null;
     }
 
@@ -94,95 +84,89 @@ public class BL {
         return cancion;
     }
 
-    public void reproducirCancion(Cancion cancion) {
+    public String reproducirCancion(Cancion cancion) {
         if (usuario == null) {
             reproductor.reproducir(cancion.getArchivoRuta());
+            return "🎵 Reproduciendo canción (modo invitado).";
         } else if (usuario.esAdmin() || usuario.haCompradoCancion(cancion)) {
             reproductor.reproducir(cancion.getArchivoRuta());
             if (!usuario.esAdmin()) {
                 historialDAO.guardarEntrada(usuario.getId(), cancion.getId());
-                System.out.println("Canción '" + cancion.getTitulo() + "' agregada al historial.");
             }
+            return "🎵 Reproduciendo: " + cancion.getTitulo();
         } else {
-            System.out.println("No has comprado esta canción. Solo puedes reproducir un preview de 30 segundos.");
             reproductor.reproducirPreview(cancion.getArchivoRuta(), 30);
+            return "⚠️ No has comprado esta canción. Solo puedes escuchar un preview de 30s.";
         }
     }
 
-    public void comprarCancion(Cancion cancion) {
+    public String comprarCancion(Cancion cancion) {
         if (usuario == null) {
-            System.out.println("Debe iniciar sesión para comprar canciones.");
-            return;
+            return "Debe iniciar sesión para comprar canciones.";
         }
-
         if (usuario.haCompradoCancion(cancion)) {
-            System.out.println("❌ Ya has comprado esta canción.");
-            return;
+            return "❌ Ya has comprado esta canción.";
         }
-
         if (usuario.getSaldo() >= cancion.getPrecio()) {
             double nuevoSaldo = usuario.getSaldo() - cancion.getPrecio();
             usuario.setSaldo(nuevoSaldo);
             usuarioCancionDAO.guardarCompra(usuario.getId(), cancion.getId());
             usuarioDAO.actualizarSaldo(usuario.getId(), nuevoSaldo);
-            // Actualiza la lista en memoria del usuario después de la compra
             usuario.getCancionesCompradas().add(cancion);
-            System.out.println("✅ Canción '" + cancion.getTitulo() + "' comprada. Nuevo saldo: $" + nuevoSaldo);
+            return "✅ Canción '" + cancion.getTitulo() + "' comprada. Nuevo saldo: $" + nuevoSaldo;
         } else {
-            System.out.println("Saldo insuficiente para comprar esta canción.");
+            return "❌ Saldo insuficiente.";
         }
     }
 
-    public void mostrarHistorial() {
+    public String mostrarHistorial() {
         if (usuario == null) {
-            System.out.println("No hay usuario activo.");
-            return;
+            return "No hay usuario activo.";
         }
 
         List<EntradaHistorial> entradas = historialDAO.obtenerHistorialPorUsuario(usuario.getId());
         if (entradas.isEmpty()) {
-            System.out.println("El historial de reproducción está vacío.");
-            return;
+            return "El historial de reproducción está vacío.";
         }
 
-        System.out.println("🎵 Historial de reproducción:");
+        StringBuilder sb = new StringBuilder("🎵 Historial de reproducción:\n");
         for (EntradaHistorial entrada : entradas) {
             Cancion c = entrada.getCancion();
-            // Verifica si la canción existe antes de imprimir
-            if(c != null) {
-                System.out.println("- " + c.getTitulo() + " por " + c.getArtista().getNombre() +
-                        " [" + entrada.getFechaHora().toString() + "]");
+            if (c != null) {
+                sb.append("- ").append(c.getTitulo())
+                        .append(" por ").append(c.getArtista().getNombre())
+                        .append(" [").append(entrada.getFechaHora()).append("]\n");
             }
         }
+        return sb.toString();
     }
 
-    // Método para obtener las listas de reproducción y las carga con las canciones
-    public void mostrarListasDeReproduccion() {
+    public String mostrarListasDeReproduccion() {
         if (usuario == null) {
-            System.out.println("No hay usuario activo.");
-            return;
+            return "No hay usuario activo.";
         }
 
         List<ListaDeReproduccion> listas = listaDeReproduccionDAO.obtenerListasPorUsuario(usuario.getId());
         usuario.setListasDeReproduccion(listas);
 
         if (listas.isEmpty()) {
-            System.out.println("No tienes listas de reproducción.");
-            return;
+            return "No tienes listas de reproducción.";
         }
 
-        System.out.println("Mis listas de reproducción:");
-        for(ListaDeReproduccion lista : listas) {
-            System.out.println("Nombre: " + lista.getNombre() + " (ID: " + lista.getId() + ")");
+        StringBuilder sb = new StringBuilder("📂 Mis listas de reproducción:\n");
+        for (ListaDeReproduccion lista : listas) {
+            sb.append("Nombre: ").append(lista.getNombre()).append(" (ID: ").append(lista.getId()).append(")\n");
             if (!lista.getCanciones().isEmpty()) {
-                System.out.println("  Canciones:");
+                sb.append("  Canciones:\n");
                 for (Cancion cancion : lista.getCanciones()) {
-                    System.out.println("    - " + cancion.getTitulo() + " por " + cancion.getArtista().getNombre());
+                    sb.append("    - ").append(cancion.getTitulo())
+                            .append(" por ").append(cancion.getArtista().getNombre()).append("\n");
                 }
             } else {
-                System.out.println("  (Vacía)");
+                sb.append("  (Vacía)\n");
             }
         }
+        return sb.toString();
     }
 
     public List<Cancion> obtenerTopCanciones() {
@@ -193,7 +177,6 @@ public class BL {
         return cancionDAO.obtenerTodasLasCanciones();
     }
 
-    // Método agregado para obtener una canción por su ID desde la capa DAO
     public Cancion obtenerCancionPorId(int idCancion) {
         return cancionDAO.obtenerCancionPorId(idCancion);
     }
@@ -206,26 +189,23 @@ public class BL {
         return listaDeReproduccionDAO.obtenerListasPorUsuario(idUsuario);
     }
 
-    public void crearListaDeReproduccion(String nombreLista) {
+    public String crearListaDeReproduccion(String nombreLista) {
         if (usuario == null) {
-            System.out.println("Debe iniciar sesión para crear listas de reproducción.");
-            return;
+            return "Debe iniciar sesión para crear listas.";
         }
         ListaDeReproduccion nuevaLista = new ListaDeReproduccion(0, nombreLista, new ArrayList<Cancion>());
         int idGenerado = listaDeReproduccionDAO.guardarListaDeReproduccion(nuevaLista, usuario.getId());
         if (idGenerado != -1) {
             nuevaLista.setId(idGenerado);
-            System.out.println("✅ Lista '" + nombreLista + "' creada correctamente.");
-            // Actualiza la lista en memoria del usuario
             usuario.getListasDeReproduccion().add(nuevaLista);
+            return "✅ Lista '" + nombreLista + "' creada correctamente.";
         } else {
-            System.out.println("❌ No se pudo crear la lista.");
+            return "❌ No se pudo crear la lista.";
         }
     }
 
-    public void agregarCancionALista(int idLista, int idCancion) {
+    public String agregarCancionALista(int idLista, int idCancion) {
         listaDeReproduccionDAO.guardarCancionEnLista(idLista, idCancion);
-        // Recargar la lista en memoria para que se muestre la canción
         ListaDeReproduccion listaActualizada = listaDeReproduccionDAO.obtenerListaPorId(idLista);
         if (listaActualizada != null) {
             for (ListaDeReproduccion lista : usuario.getListasDeReproduccion()) {
@@ -235,7 +215,7 @@ public class BL {
                 }
             }
         }
-        System.out.println("✅ Canción agregada a la base de datos.");
+        return "✅ Canción agregada a la lista.";
     }
 
     public List<Usuario> obtenerTodosLosUsuarios() {
@@ -258,22 +238,21 @@ public class BL {
         return reproductor;
     }
 
-    // Nuevo método para mostrar las canciones compradas
-    public void mostrarCancionesCompradas() {
+    public String mostrarCancionesCompradas() {
         if (usuario == null) {
-            System.out.println("No hay usuario activo.");
-            return;
+            return "No hay usuario activo.";
         }
 
         List<Cancion> compradas = usuarioCancionDAO.obtenerCancionesCompradasPorUsuario(usuario.getId());
         if (compradas.isEmpty()) {
-            System.out.println("No has comprado ninguna canción.");
-            return;
+            return "No has comprado ninguna canción.";
         }
 
-        System.out.println("🎵 Canciones compradas:");
+        StringBuilder sb = new StringBuilder("🎵 Canciones compradas:\n");
         for (Cancion cancion : compradas) {
-            System.out.println("- " + cancion.getTitulo() + " - " + cancion.getArtista().getNombre());
+            sb.append("- ").append(cancion.getTitulo())
+                    .append(" - ").append(cancion.getArtista().getNombre()).append("\n");
         }
+        return sb.toString();
     }
 }

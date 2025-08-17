@@ -1,89 +1,143 @@
 package UI;
 
-import BL.BL;
-import BL.Cancion;
-import BL.ListaDeReproduccion;
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import BL.*;
+import javax.swing.*;
+import java.awt.*;
 import java.util.List;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 
 public class UserFrame extends JFrame {
     private BL app;
 
-    private JButton btnExplorar, btnTop, btnHistorial, btnCompradas, btnCrearLista, btnVerListas, btnSalir;
-
     public UserFrame(BL app) {
         this.app = app;
-        setTitle("Usuario: " + app.getUsuario().getNombreUsuario());
-        setSize(400, 300);
+
+        setTitle("🎵 Streaming Musical - Usuario");
+        setSize(600, 500);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Componentes
-        btnExplorar = new JButton("Explorar Canción");
-        btnTop = new JButton("Top 5 Canciones");
-        btnHistorial = new JButton("Historial");
-        btnCompradas = new JButton("Canciones Compradas");
-        btnCrearLista = new JButton("Crear Lista");
-        btnVerListas = new JButton("Mis listas de reproducción");
-        btnSalir = new JButton("Cerrar Sesión");
+        JPanel panel = new JPanel(new GridLayout(0, 1, 5, 5));
 
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(7, 1, 10, 10));
+        JButton btnExplorar = new JButton("Explorar Biblioteca (Comprar/Reproducir)");
+        JButton btnTop = new JButton("Ver Top 5 Canciones");
+        JButton btnHistorial = new JButton("Ver Historial");
+        JButton btnListas = new JButton("Ver Listas de Reproducción");
+        JButton btnNuevaLista = new JButton("Crear Lista de Reproducción");
+        JButton btnCompradas = new JButton("Ver Canciones Compradas");
+        JButton btnReproducirCompradas = new JButton("Reproducir Canciones Compradas");
+        JButton btnSalir = new JButton("Cerrar Sesión");
+
         panel.add(btnExplorar);
         panel.add(btnTop);
         panel.add(btnHistorial);
+        panel.add(btnListas);
+        panel.add(btnNuevaLista);
         panel.add(btnCompradas);
-        panel.add(btnCrearLista);
-        panel.add(btnVerListas);
+        panel.add(btnReproducirCompradas);
         panel.add(btnSalir);
 
         add(panel);
 
-        // Listeners
+        // --- BOTÓN EXPLORAR ---
         btnExplorar.addActionListener(e -> {
-            String titulo = JOptionPane.showInputDialog(this, "Título de la canción:");
-            if (titulo != null) {
-                Cancion c = app.buscarCancionPorTitulo(titulo);
-                if (c != null) {
-                    JOptionPane.showMessageDialog(this, "🎵 " + c.getTitulo() + " - " + c.getArtista().getNombre());
-                } else {
-                    JOptionPane.showMessageDialog(this, "No encontrada.");
+            List<Cancion> canciones = app.obtenerTodasLasCanciones();
+            if (canciones.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No hay canciones disponibles.");
+                return;
+            }
+
+            String[] opciones = canciones.stream()
+                    .map(c -> c.getId() + " - " + c.getTitulo() + " (" + c.getPrecio() + "$)")
+                    .toArray(String[]::new);
+
+            String seleccion = (String) JOptionPane.showInputDialog(this,
+                    "Selecciona una canción:", "Explorar Biblioteca",
+                    JOptionPane.PLAIN_MESSAGE, null, opciones, opciones[0]);
+
+            if (seleccion != null) {
+                int id = Integer.parseInt(seleccion.split(" - ")[0]);
+                Cancion c = app.obtenerCancionPorId(id);
+
+                String[] acciones = {"Comprar", "Reproducir", "Cancelar"};
+                int opcion = JOptionPane.showOptionDialog(this,
+                        "¿Qué deseas hacer con '" + c.getTitulo() + "'?",
+                        "Acción",
+                        JOptionPane.DEFAULT_OPTION,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        null, acciones, acciones[0]);
+
+                if (opcion == 0) { // Comprar
+                    JOptionPane.showMessageDialog(this, app.comprarCancion(c));
+                } else if (opcion == 1) { // Reproducir
+                    JOptionPane.showMessageDialog(this, app.reproducirCancion(c));
                 }
             }
         });
 
+        // --- BOTÓN TOP 5 ---
         btnTop.addActionListener(e -> {
-            List<Cancion> top = app.obtenerTopCanciones();
-            StringBuilder sb = new StringBuilder("Top 5:\n");
-            for (int i = 0; i < top.size(); i++) {
-                sb.append((i + 1)).append(". ").append(top.get(i).getTitulo())
-                        .append(" - ").append(top.get(i).getArtista().getNombre()).append("\n");
+            List<Cancion> canciones = app.obtenerTopCanciones();
+            if (canciones.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No hay canciones disponibles.");
+                return;
+            }
+            StringBuilder sb = new StringBuilder("=== TOP 5 ===\n");
+            for (int i = 0; i < canciones.size(); i++) {
+                sb.append(i + 1).append(". ")
+                        .append(canciones.get(i).getTitulo())
+                        .append(" - ").append(canciones.get(i).getArtista().getNombre())
+                        .append(" (").append(canciones.get(i).getCalificacionPromedio()).append("/10)\n");
             }
             JOptionPane.showMessageDialog(this, sb.toString());
         });
 
-        btnHistorial.addActionListener(e -> app.mostrarHistorial());
+        // --- BOTÓN HISTORIAL ---
+        btnHistorial.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this, app.mostrarHistorial());
+        });
 
-        // Listener para ver canciones compradas
-        btnCompradas.addActionListener(e -> app.mostrarCancionesCompradas());
+        // --- BOTÓN VER LISTAS ---
+        btnListas.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this, app.mostrarListasDeReproduccion());
+        });
 
-        // Listener para crear lista de reproducción
-        btnCrearLista.addActionListener(e -> {
-            String nombreLista = JOptionPane.showInputDialog(this, "Nombre de la nueva lista:");
-            if (nombreLista != null && !nombreLista.trim().isEmpty()) {
-                app.crearListaDeReproduccion(nombreLista);
+        // --- BOTÓN CREAR LISTA ---
+        btnNuevaLista.addActionListener(e -> {
+            String nombre = JOptionPane.showInputDialog(this, "Nombre de la nueva lista:");
+            if (nombre != null && !nombre.isBlank()) {
+                JOptionPane.showMessageDialog(this, app.crearListaDeReproduccion(nombre));
             }
         });
 
-        // Listener para ver listas de reproducción
-        btnVerListas.addActionListener(e -> app.mostrarListasDeReproduccion());
+        // --- BOTÓN VER COMPRADAS ---
+        btnCompradas.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this, app.mostrarCancionesCompradas());
+        });
 
+        // --- BOTÓN REPRODUCIR COMPRADAS ---
+        btnReproducirCompradas.addActionListener(e -> {
+            List<Cancion> compradas = app.getUsuario().getCancionesCompradas();
+            if (compradas == null || compradas.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No has comprado canciones aún.");
+                return;
+            }
+
+            String[] opciones = compradas.stream()
+                    .map(c -> c.getId() + " - " + c.getTitulo())
+                    .toArray(String[]::new);
+
+            String seleccion = (String) JOptionPane.showInputDialog(this,
+                    "Selecciona una canción:", "Reproducir Canciones Compradas",
+                    JOptionPane.PLAIN_MESSAGE, null, opciones, opciones[0]);
+
+            if (seleccion != null) {
+                int id = Integer.parseInt(seleccion.split(" - ")[0]);
+                Cancion c = app.obtenerCancionPorId(id);
+                JOptionPane.showMessageDialog(this, app.reproducirCancion(c));
+            }
+        });
+
+        // --- BOTÓN SALIR ---
         btnSalir.addActionListener(e -> {
             app.setUsuario(null);
             this.dispose();

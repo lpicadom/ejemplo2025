@@ -70,7 +70,7 @@ public class UsuarioDAO {
     }
 
     public void guardarUsuario(Usuario usuario) {
-        String sql = "INSERT INTO usuarios (nombre, correo, nombre_usuario, contrasena, saldo, es_admin) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO usuarios (nombre_completo, correo_electronico, nombre_usuario, contrasena, saldo, es_admin) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setString(1, usuario.getNombre());
