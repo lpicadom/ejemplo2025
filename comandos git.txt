@@ -2,16 +2,63 @@ git config --global user.name "Mauricio Camacho"
 git config --list
 git config --global user.email "mcamacho2@ucenfotec.ac.cr
 
+*********************************INICIALIZAR CARPETA***************************************************
+
+1️⃣ Crear carpeta local
+mkdir NuevoRepo
+cd NuevoRepo
+
+2️⃣ Inicializar Git
+git init
+
+3️⃣ Agregar archivos y hacer primer commit
+git add .
+git commit -m "Primer commit"
+
+4️⃣ Crear el repo vacío en GitHub
+En GitHub → New repository
+Nombre: Proyecto2
+No marcar opciones de README ni .gitignore
+
+5️⃣ Vincular el remoto
+git remote add origin https://github.com/lpicadom/Proyecto2.git
+
+6️⃣ Renombrar branch local (opcional, si quieres que sea main)
+git branch -M main
+
+7️⃣ Enviar al remoto (primer push)
+git push -u origin main
+
+------------ver a que remoto apunta------------
+
+1️⃣ Ver los remotos actuales
+git remote -v
+
+2️⃣ Cambiar la URL del remoto existente
+git remote set-url origin https://github.com/lpicadom/Private.git
+
+3️⃣ Eliminar el remoto y agregar uno nuevo
+git remote remove origin
+git remote add origin https://github.com/lpicadom/Private.git
+
+----------------------------------------------------
+
+
+
+*************************** NUEVO PUSH *********************************************
+
 git status
 git add * 
 git commit -m "se agregan atributos a ejemplos"
 git push 
 
+***************************
 ------Actualizar local ---
 git fetch QUE PASO EN EL REMOTO? 
 git pull
 
 
+***************************
 ---- branch --- 
 
 git branch --all PARA VER TODOS LOS BRANCHES
@@ -21,12 +68,28 @@ git checkout NOMBRE DEL BRANCH .... Para cambiar de branch
 git push -u origin main
 
 
+--- copiar branch -- 
+
+se copia lo que esta de ulises al master invertir si es necesario
+
+git checkout master
+git fetch origin
+git merge origin/Luis
+git push origin master
+
+***************************
+
 ----- volver al codigo del ultimo commit ----
 
 git reset --hard
 git clean -fd
 
 
+***************************
 ---- todo el codigo en texto plano ---- 
 
 (for /r %i in (*.java) do @type "%i" & echo. & echo --- Fin de Archivo: %i --- & echo.) > "%USERPROFILE%\Desktop\todo_el_codigo.txt"
+
+***************************
+
+
